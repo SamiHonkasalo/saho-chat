@@ -17,19 +17,19 @@ namespace saho_chat_backend.Hubs
         public async Task UserConnected(string username)
         {
             var id = Context.ConnectionId;
-            await Clients.All.SendAsync("userConnected", username, id);
+            await Clients.All.SendAsync("userConnected", username, id, Guid.NewGuid().ToString());
         }
 
         public async Task NewMessage(string username, string message)
         {
             var id = Context.ConnectionId;
-            await Clients.All.SendAsync("messageReceived", username, id, message);
+            await Clients.All.SendAsync("messageReceived", username, id, Guid.NewGuid().ToString(), message);
         }
 
         public async Task UserDisconnected(string username)
         {
             var id = Context.ConnectionId;
-            await Clients.All.SendAsync("userDisonnected", username, id);
+            await Clients.All.SendAsync("userDisonnected", username, id, Guid.NewGuid().ToString());
         }
     }
 }

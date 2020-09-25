@@ -28,6 +28,7 @@ type Message = {
   user: string;
   userId: string;
   type: 'message' | 'connectionMessage' | 'disconnectionMessage';
+  messageId: string;
 };
 
 const Chat = ({ username }: Props) => {
@@ -37,6 +38,7 @@ const Chat = ({ username }: Props) => {
   const [messages, setMessages] = useState<Message[]>([] as Message[]);
   const connection = useRef<signalR.HubConnection>();
   const messageInputRef = useRef<HTMLInputElement>();
+  const messageContainerRef = useRef<HTMLDivElement>(null);
   const notify = useNotification();
 
   // On mount, set focus to username field
@@ -55,34 +57,41 @@ const Chat = ({ username }: Props) => {
         .build();
       c.on(
         'messageReceived',
-        (user: string, userId: string, message: string) => {
+        (user: string, userId: string, messageId: string, message: string) => {
           setMessages((prevMessages) => [
             ...prevMessages,
-            { user, userId, message, type: 'message' },
+            { user, userId, message, type: 'message', messageId },
           ]);
         }
       );
-      c.on('userConnected', (user: string, userId: string) => {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { user, userId, message: '', type: 'connectionMessage' },
-        ]);
-      });
+      c.on(
+        'userConnected',
+        (user: string, userId: string, messageId: string) => {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { user, userId, message: '', type: 'connectionMessage', messageId },
+          ]);
+        }
+      );
       c.on('setConnectionId', (userId: string) => {
         setConnectionId(userId);
       });
 
-      c.on('userDisconnected', (user: string, userId: string) => {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            user,
-            userId,
-            message: '',
-            type: 'disconnectionMessage',
-          },
-        ]);
-      });
+      c.on(
+        'userDisconnected',
+        (user: string, userId: string, messageId: string) => {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              user,
+              userId,
+              message: '',
+              type: 'disconnectionMessage',
+              messageId,
+            },
+          ]);
+        }
+      );
 
       c.start()
         .then(() => {
@@ -102,6 +111,22 @@ const Chat = ({ username }: Props) => {
       }
     };
   }, [notify, username]);
+
+  useEffect(() => {
+    // Scroll to the newest message
+    const newestMessage = document.getElementById('newest-item');
+    if (messageContainerRef && messageContainerRef.current && newestMessage) {
+      const newestMessageHeight = newestMessage.clientHeight + 50;
+      if (
+        messageContainerRef.current.scrollTop +
+          messageContainerRef.current.clientHeight >=
+        messageContainerRef.current.scrollHeight - newestMessageHeight
+      ) {
+        messageContainerRef.current.scrollTop =
+          messageContainerRef.current.scrollHeight;
+      }
+    }
+  }, [messages]);
 
   const handleInputChange = (
     event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
@@ -124,37 +149,31 @@ const Chat = ({ username }: Props) => {
           elevation={16}
           className={classes.fullHeight}
           style={{ overflow: 'auto', padding: 5, display: 'flex' }}
+          id="chat-container"
+          ref={messageContainerRef}
+          component="div"
         >
           <Grid
             container
             style={{
               alignContent: 'flex-end',
               padding: 20,
-              overflowY: 'auto',
               marginTop: 'auto',
             }}
           >
-            {messages.map((m) => {
+            {messages.map((m, index) => {
               return m.type === 'message' ? (
                 <SpeechBubble
-                  key={
-                    m.userId +
-                    m.message +
-                    m.user +
-                    new Date(Date.now()).getMilliseconds()
-                  }
+                  id={index === messages.length - 1 ? 'newest-item' : undefined}
+                  key={m.messageId}
                   message={m.message}
                   user={m.user}
                   isOwn={m.userId === connectionId}
                 />
               ) : (
                 <Grid
-                  key={
-                    m.userId +
-                    m.message +
-                    m.user +
-                    new Date(Date.now()).getMilliseconds()
-                  }
+                  id={index === messages.length - 1 ? 'newest-item' : undefined}
+                  key={m.messageId}
                   item
                   xs={12}
                   style={{

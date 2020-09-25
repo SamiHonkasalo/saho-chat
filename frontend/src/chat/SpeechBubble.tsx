@@ -5,7 +5,7 @@ import { Box, Typography } from '@material-ui/core';
 const useStyles = makeStyles((theme) => ({
   ownMessage: {
     display: 'table',
-    maxWidth: '40%',
+    maxWidth: '80%',
     backgroundColor: theme.palette.primary.main,
     borderRadius: 15,
     padding: 15,
@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
   },
   message: {
     display: 'table',
-    maxWidth: '40%',
+    maxWidth: '80%',
     backgroundColor: theme.palette.secondary.main,
     borderRadius: 15,
     padding: 15,
@@ -58,12 +58,13 @@ interface Props {
   user: string;
   message: string;
   isOwn: boolean;
+  id: string | undefined;
 }
 
-const SpeechBubble: React.FC<Props> = ({ user, message, isOwn }: Props) => {
+const SpeechBubble: React.FC<Props> = ({ user, message, isOwn, id }: Props) => {
   const classes = useStyles();
   return (
-    <Box style={{ width: '100%', marginTop: 10 }}>
+    <Box id={id} style={{ width: '100%', marginTop: 10 }}>
       <Box className={isOwn ? classes.ownMessage : classes.message}>
         <Typography
           className={classes.usernameText}
